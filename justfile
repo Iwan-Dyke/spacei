@@ -23,3 +23,6 @@ produce_sample:
 
 consume_raw:
     docker compose exec redpanda rpk topic consume space.raw.celestrak.tle --num 1
+
+consume_python:
+    uv run python -m spacei.consume_raw
