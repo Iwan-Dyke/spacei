@@ -1,4 +1,15 @@
 from typing import Any
+from urllib.request import urlopen
+
+
+CELESTRAK_STATIONS_URL = (
+    "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
+)
+
+
+def fetch_celestrak_tles(url: str = CELESTRAK_STATIONS_URL) -> str:
+    with urlopen(url, timeout=10) as response:
+        return response.read().decode("utf-8")
 
 
 def parse_tle_records(text: str) -> list[dict[str, Any]]:

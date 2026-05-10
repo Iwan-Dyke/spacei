@@ -26,3 +26,6 @@ consume_raw:
 
 consume_python:
     uv run python -m spacei.consume_raw
+
+ingest_celestrak:
+    uv run python -m spacei.ingest_celestrak
