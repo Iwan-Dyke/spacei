@@ -10,7 +10,7 @@ def build_orbital_elements_event(raw_event: dict[str, Any]) -> dict[str, Any]:
     return build_event(
         event_id=f"orbital-elements:{payload['norad_id']}:{observed_at}",
         event_type="orbital_elements.updated",
-        source="spacei.normaliser.tle",
+        source="spacei.normalizer.tle",
         observed_at=observed_at,
         payload={
             "norad_id": payload["norad_id"],

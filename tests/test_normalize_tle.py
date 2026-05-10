@@ -1,4 +1,4 @@
-from spacei.normalise_tle import build_orbital_elements_event
+from spacei.normalize_tle import build_orbital_elements_event
 
 
 def test_build_orbital_elements_event_from_tle_observed_event():
@@ -21,7 +21,7 @@ def test_build_orbital_elements_event_from_tle_observed_event():
 
     assert event["event_id"] == "orbital-elements:25544:2026-05-10T19:54:16Z"
     assert event["event_type"] == "orbital_elements.updated"
-    assert event["source"] == "spacei.normaliser.tle"
+    assert event["source"] == "spacei.normalizer.tle"
     assert event["observed_at"] == "2026-05-10T19:54:16Z"
     assert event["payload"] == {
         "norad_id": "25544",
