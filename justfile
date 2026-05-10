@@ -1,3 +1,6 @@
+test:
+    uv run python -m pytest
+
 up:
     docker compose up -d
 
@@ -14,3 +17,9 @@ topics:
 
 topics-list:
     docker compose exec redpanda rpk topic list
+
+produce_sample:
+    uv run python -m spacei.produce_sample
+
+consume_raw:
+    docker compose exec redpanda rpk topic consume space.raw.celestrak.tle --num 1
