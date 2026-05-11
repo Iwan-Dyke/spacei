@@ -2,11 +2,21 @@ import os
 import json
 from typing import Any
 from spacei.events import build_event
+from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
 
 
 RAW_TOPIC = "space.raw.celestrak.tle"
 NORMALIZED_TOPIC = "space.normalized.orbital_elements"
 DEADLETTER_TOPIC = "space.deadletter"
+
+
+def build_consumer() -> Consumer:
+    return Consumer(build_consumer_config())
+
+
+def build_producer() -> Producer:
+    return Producer(build_producer_config())
+
 
 def build_orbital_elements_event(raw_event: dict[str, Any]) -> dict[str, Any]:
     payload = raw_event["payload"]
@@ -61,3 +71,33 @@ def build_producer_config() -> dict[str, str]:
             "localhost:9092",
         ),
     }
+
+def run_normalizer() -> None:
+    consumer = build_consumer()
+    producer = build_producer()
+    consumer.subscribe([RAW_TOPIC])
+
+    try:
+        while True:
+            message = consumer.poll(1.0)
+
+            if message is None:
+                continue
+
+            if message.error():
+                if message.error().code() == KafkaError._PARTITION_EOF:
+                    continue
+                raise KafkaException(message.error())
+
+            key, value = process_raw_message(message.value())
+            producer.produce(NORMALIZED_TOPIC, key=key, value=value)
+            producer.poll(0)
+    finally:
+        producer.flush()
+        consumer.close()
+
+def main() -> None:
+    run_normalizer()
+
+if __name__ == "__main__":
+    main()
