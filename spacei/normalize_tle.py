@@ -37,6 +37,19 @@ def build_orbital_elements_event(raw_event: dict[str, Any]) -> dict[str, Any]:
         },
     )
 
+def build_deadletter_event(raw_value: bytes, error: Exception) -> dict[str, Any]:
+    return build_event(
+        event_id="deadletter:spacei.normalizer.tle",
+        event_type="message.deadlettered",
+        source="spacei.normalizer.tle",
+        observed_at="",
+        payload={
+            "raw_value": raw_value.decode("utf-8", errors="replace"),
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+        },
+    )
+
 def normalize_raw_tle_event(raw_event: dict[str, Any]) -> dict[str, Any]:
     return build_orbital_elements_event(raw_event)
 
@@ -50,6 +63,14 @@ def process_raw_message(value: bytes) -> tuple[str, bytes]:
     raw_event = decode_event(value)
     event = normalize_raw_tle_event(raw_event)
     return event["payload"]["norad_id"], encode_event(event)
+
+def process_raw_message_or_deadletter(value: bytes) -> tuple[str, str, bytes]:
+    try:
+        key, normalized_value = process_raw_message(value)
+        return NORMALIZED_TOPIC, key, normalized_value
+    except Exception as error:
+        event = build_deadletter_event(value, error)
+        return DEADLETTER_TOPIC, "spacei.normalizer.tle", encode_event(event)
 
 def build_consumer_config() -> dict[str, str]:
     return {
@@ -89,8 +110,8 @@ def run_normalizer() -> None:
                     continue
                 raise KafkaException(message.error())
 
-            key, value = process_raw_message(message.value())
-            producer.produce(NORMALIZED_TOPIC, key=key, value=value)
+            topic, key, value = process_raw_message_or_deadletter(message.value())
+            producer.produce(topic, key=key, value=value)
             producer.poll(0)
     finally:
         producer.flush()

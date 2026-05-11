@@ -9,6 +9,8 @@ from spacei.normalize_tle import (
     process_raw_message,
     build_consumer_config,
     build_producer_config,
+    build_deadletter_event,
+    process_raw_message_or_deadletter,
 )
 
 def test_build_orbital_elements_event_from_tle_observed_event():
@@ -132,3 +134,28 @@ def test_build_producer_config_uses_local_defaults(monkeypatch):
     assert config == {
         "bootstrap.servers": "localhost:9092"
     }
+
+def test_build_deadletter_event_records_raw_value_and_error():
+    raw_value = b"not-json"
+    error = ValueError("bad message")
+
+    event = build_deadletter_event(raw_value, error)
+
+    assert event["event_type"] == "message.deadlettered"
+    assert event["source"] == "spacei.normalizer.tle"
+    assert event["payload"] == {
+        "raw_value": "not-json",
+        "error_type": "ValueError",
+        "error_message": "bad message",
+    }
+
+def test_process_raw_message_or_deadletter_routes_invalid_message_to_deadletter():
+    topic, key, value = process_raw_message_or_deadletter(b"not-json")
+
+    event = decode_event(value)
+
+    assert topic == DEADLETTER_TOPIC
+    assert key == "spacei.normalizer.tle"
+    assert event["event_type"] == "message.deadlettered"
+    assert event["payload"]["raw_value"] == "not-json"
+    assert event["payload"]["error_type"] == "JSONDecodeError"
