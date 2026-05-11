@@ -18,14 +18,17 @@ topics:
 topics-list:
     docker compose exec redpanda rpk topic list
 
-produce_sample:
+produce-sample:
     uv run python -m spacei.produce_sample
 
-consume_raw:
+consume-raw:
     docker compose exec redpanda rpk topic consume space.raw.celestrak.tle --num 1
 
-consume_python:
+consume-python:
     uv run python -m spacei.consume_raw
 
-ingest_celestrak:
+ingest-celestrak:
     uv run python -m spacei.ingest_celestrak
+
+normalize-tle:
+    uv run python -m spacei.normalize_tle
